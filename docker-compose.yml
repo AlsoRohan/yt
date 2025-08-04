@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  youtube-shorts-generator:
+    build: .
+    ports:
+      - "3000:80"
+    volumes:
+      - ./downloads:/app/downloads
+      - ./outputs:/app/outputs
+      - ./temp:/app/temp
+    environment:
+      - NODE_ENV=production
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  # Development services
+  backend-dev:
+    build:
+      context: .
+      target: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./downloads:/app/downloads
+      - ./outputs:/app/outputs
+      - ./temp:/app/temp
+    environment:
+      - PYTHONPATH=/app/backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    profiles: ["dev"]
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend.dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    command: npm run dev
+    profiles: ["dev"]
